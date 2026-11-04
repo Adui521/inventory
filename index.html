@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>库存台账</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #e3e6ea;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --green: #16a34a;
+    --red: #dc2626;
+    --amber: #d97706;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 13px; }
+
+  /* 库存看板 */
+  .board {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+  }
+  .board h2 { font-size: 15px; margin-bottom: 12px; color: var(--text); }
+  .board table { width: 100%; border-collapse: collapse; }
+  .board th, .board td {
+    text-align: left; padding: 8px 10px; font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .board th { background: #fafbfc; color: var(--muted); font-weight: 600; }
+  .board td.num, .board th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .stock-val { font-weight: 700; }
+  .stock-low { color: var(--red); }
+  .empty-hint { color: var(--muted); font-size: 13px; padding: 12px 0; }
+
+  /* 标签页 */
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab {
+    padding: 9px 18px; border: 1px solid var(--border); background: var(--card);
+    border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; color: var(--muted);
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+    font-weight: 600;
+  }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 0 8px 8px 8px; padding: 20px; display: none;
+  }
+  .panel.active { display: block; }
+  .panel h3 { font-size: 16px; margin-bottom: 14px; }
+
+  /* 表单 */
+  .form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  input, select {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; min-width: 150px; background: #fff; color: var(--text);
+  }
+  input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+
+  .btn {
+    padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer;
+    font-size: 14px; font-weight: 600; color: #fff; background: var(--primary);
+  }
+  .btn:hover { background: var(--primary-dark); }
+  .btn.green { background: var(--green); }
+  .btn.green:hover { background: #15803d; }
+  .btn.red { background: var(--red); }
+  .btn.red:hover { background: #b91c1c; }
+  .btn.small { padding: 5px 12px; font-size: 13px; }
+  .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  /* 表格 */
+  table.data { width: 100%; border-collapse: collapse; }
+  table.data th, table.data td {
+    text-align: left; padding: 9px 10px; font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.data th { background: #fafbfc; color: var(--muted); font-weight: 600; }
+  table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data tbody tr:hover { background: #f8fafc; }
+  .muted { color: var(--muted); }
+  .tag { display:inline-block; padding:2px 8px; border-radius: 10px; font-size:12px; background:#eef2ff; color:var(--primary); }
+  .tag.out { background:#fee2e2; color:var(--red); }
+
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll table { min-width: 620px; }
+  .board .table-scroll table { min-width: 720px; }
+
+  /* 提示弹窗 */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(17,24,39,.5);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal {
+    background: #fff; border-radius: 12px; width: 380px; max-width: 90vw;
+    box-shadow: 0 20px 50px rgba(0,0,0,.28); overflow: hidden;
+  }
+  .modal-header { padding: 14px 18px; color: #fff; font-weight: 700; font-size: 15px; }
+  .modal-header.error { background: var(--red); }
+  .modal-header.info { background: var(--primary); }
+  .modal-body { padding: 20px 18px; font-size: 15px; line-height: 1.6; white-space: pre-line; }
+  .modal-actions { padding: 0 18px 18px; text-align: right; }
+
+  /* 手机适配 */
+  @media (max-width: 640px) {
+    body { padding: 12px; }
+    h1 { font-size: 19px; }
+    .topbar { gap: 10px; }
+    .tabs { flex-wrap: wrap; }
+    .tab { flex: 1 1 auto; text-align: center; padding: 9px 8px; font-size: 13px; }
+    .panel { padding: 14px; }
+    .board { padding: 12px; }
+    .form-row { gap: 10px; }
+    .form-row .field { flex: 1 1 100% !important; min-width: 0 !important; }
+    .form-row .field input, .form-row .field select { width: 100% !important; min-width: 0 !important; }
+    .form-row .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>📦 库存台账</h1>
+      <div class="sub">单机版 · 数据保存在浏览器本地（localStorage）</div>
+    </div>
+    <button class="btn" id="btn-export">导出 CSV</button>
+  </div>
+
+  <!-- 库存看板 -->
+  <div class="board">
+    <h2>库存看板（当前库存 = 总入库 − 总出库）</h2>
+    <div id="board"></div>
+  </div>
+
+  <!-- 标签页 -->
+  <div class="tabs">
+    <div class="tab active" data-tab="product">商品档案</div>
+    <div class="tab" data-tab="in">入库登记</div>
+    <div class="tab" data-tab="out">出库登记</div>
+  </div>
+
+  <!-- 商品档案 -->
+  <div class="panel active" id="panel-product">
+    <h3>新增商品</h3>
+    <div class="form-row">
+      <div class="field"><label>商品编码 *（唯一）</label><input id="p-code" placeholder="如 SP001"></div>
+      <div class="field"><label>名称 *</label><input id="p-name" placeholder="商品名称"></div>
+      <div class="field"><label>规格</label><input id="p-spec" placeholder="如 500ml / 箱"></div>
+      <div class="field"><label>单位 *</label><input id="p-unit" placeholder="如 件 / 个 / 箱" style="min-width:110px;"></div>
+      <button class="btn" id="btn-add-product">新增商品</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 16px;">
+    <h3>商品列表</h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>商品编码</th><th>名称</th><th>规格</th><th>单位</th><th class="num">操作</th></tr></thead>
+        <tbody id="product-list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 入库登记 -->
+  <div class="panel" id="panel-in">
+    <h3>入库登记</h3>
+    <div class="form-row">
+      <div class="field"><label>选择商品 *</label><select id="in-product" style="min-width:220px;"></select></div>
+      <div class="field"><label>入库数量 *</label><input id="in-qty" type="number" min="0" step="any" placeholder="数量"></div>
+      <div class="field" style="flex:1;min-width:200px;"><label>备注</label><input id="in-note" placeholder="可选" style="width:100%;"></div>
+      <button class="btn green" id="btn-in">确认入库</button>
+    </div>
+    <h3 style="margin-top:8px;">入库记录</h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>时间</th><th>商品编码</th><th>名称</th><th class="num">数量</th><th>备注</th></tr></thead>
+        <tbody id="in-list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 出库登记 -->
+  <div class="panel" id="panel-out">
+    <h3>出库登记</h3>
+    <div class="form-row">
+      <div class="field"><label>选择商品 *</label><select id="out-product" style="min-width:220px;"></select></div>
+      <div class="field"><label>出库数量 *</label><input id="out-qty" type="number" min="0" step="any" placeholder="数量"></div>
+      <div class="field" style="flex:1;min-width:200px;"><label>备注</label><input id="out-note" placeholder="可选" style="width:100%;"></div>
+      <button class="btn red" id="btn-out">确认出库</button>
+    </div>
+    <h3 style="margin-top:8px;">出库记录</h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>时间</th><th>商品编码</th><th>名称</th><th class="num">数量</th><th>备注</th></tr></thead>
+        <tbody id="out-list"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 提示弹窗 -->
+<div class="modal-overlay" id="modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header" id="modal-header"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions"><button class="btn" id="modal-ok">确定</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var K = { products: 'inv_products', in: 'inv_in', out: 'inv_out' };
+
+  // 安全存储：部分手机浏览器对本地文件禁用 localStorage 时，回退到内存，避免直接报错
+  var storage = (function () {
+    try {
+      var t = '__inv_test__';
+      window.localStorage.setItem(t, '1');
+      window.localStorage.removeItem(t);
+      return window.localStorage;
+    } catch (e) {
+      var mem = {};
+      return {
+        getItem: function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+        setItem: function (k, v) { mem[k] = String(v); },
+        removeItem: function (k) { delete mem[k]; }
+      };
+    }
+  })();
+
+  function load(key, fallback) {
+    try { return JSON.parse(storage.getItem(key)) || fallback; }
+    catch (e) { return fallback; }
+  }
+  function save(key, val) { storage.setItem(key, JSON.stringify(val)); }
+
+  var state = {
+    products: load(K.products, []),
+    inRecords: load(K.in, []),
+    outRecords: load(K.out, [])
+  };
+
+  function persist() {
+    save(K.products, state.products);
+    save(K.in, state.inRecords);
+    save(K.out, state.outRecords);
+  }
+
+  function findProduct(code) {
+    return state.products.find(function (p) { return p.code === code; });
+  }
+
+  function totalIn(code) {
+    return state.inRecords.reduce(function (s, r) { return r.code === code ? s + r.qty : s; }, 0);
+  }
+  function totalOut(code) {
+    return state.outRecords.reduce(function (s, r) { return r.code === code ? s + r.qty : s; }, 0);
+  }
+  function stock(code) { return totalIn(code) - totalOut(code); }
+
+  function fmtNum(n) {
+    // 去掉多余的小数点后零，保留必要小数
+    return Number(n.toFixed(6)).toLocaleString('zh-CN');
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function showModal(msg, type) {
+    var isError = type === 'error';
+    document.getElementById('modal-header').className = 'modal-header ' + (isError ? 'error' : 'info');
+    document.getElementById('modal-header').textContent = isError ? '⚠️ 提示' : 'ℹ️ 提示';
+    document.getElementById('modal-body').textContent = msg;
+    document.getElementById('modal-ok').className = 'btn' + (isError ? ' red' : '');
+    document.getElementById('modal').style.display = 'flex';
+  }
+  function hideModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+
+  /* ---------- 库存看板 ---------- */
+  function renderBoard() {
+    var el = document.getElementById('board');
+    if (!state.products.length) {
+      el.innerHTML = '<div class="empty-hint">暂无商品，请先在「商品档案」中新增商品。</div>';
+      return;
+    }
+    var rows = state.products.map(function (p) {
+      var s = stock(p.code);
+      return '<tr>' +
+        '<td>' + esc(p.code) + '</td>' +
+        '<td>' + esc(p.name) + '</td>' +
+        '<td>' + esc(p.spec || '—') + '</td>' +
+        '<td>' + esc(p.unit) + '</td>' +
+        '<td class="num">' + fmtNum(totalIn(p.code)) + '</td>' +
+        '<td class="num">' + fmtNum(totalOut(p.code)) + '</td>' +
+        '<td class="num stock-val' + (s < 0 ? ' stock-low' : '') + '">' + fmtNum(s) + '</td>' +
+        '</tr>';
+    }).join('');
+    el.innerHTML =
+      '<div class="table-scroll"><table><thead><tr>' +
+      '<th>商品编码</th><th>名称</th><th>规格</th><th>单位</th>' +
+      '<th class="num">总入库</th><th class="num">总出库</th><th class="num">当前库存</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  /* ---------- 商品档案 ---------- */
+  function renderProducts() {
+    var tbody = document.getElementById('product-list');
+    if (!state.products.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="muted">暂无商品</td></tr>';
+      return;
+    }
+    tbody.innerHTML = state.products.map(function (p) {
+      return '<tr>' +
+        '<td>' + esc(p.code) + '</td>' +
+        '<td>' + esc(p.name) + '</td>' +
+        '<td>' + esc(p.spec || '—') + '</td>' +
+        '<td>' + esc(p.unit) + '</td>' +
+        '<td class="num"><button class="btn red small" data-del="' + esc(p.code) + '">删除</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function addProduct() {
+    var code = document.getElementById('p-code').value.trim();
+    var name = document.getElementById('p-name').value.trim();
+    var spec = document.getElementById('p-spec').value.trim();
+    var unit = document.getElementById('p-unit').value.trim();
+    if (!code) { showModal('请填写商品编码', 'error'); return; }
+    if (!name) { showModal('请填写商品名称', 'error'); return; }
+    if (!unit) { showModal('请填写单位', 'error'); return; }
+    if (findProduct(code)) { showModal('商品编码已存在：' + code + '，编码不可重复。', 'error'); return; }
+    state.products.push({ code: code, name: name, spec: spec, unit: unit });
+    persist();
+    document.getElementById('p-code').value = '';
+    document.getElementById('p-name').value = '';
+    document.getElementById('p-spec').value = '';
+    document.getElementById('p-unit').value = '';
+    refreshAll();
+  }
+
+  function deleteProduct(code) {
+    var p = findProduct(code);
+    var hasIn = totalIn(code) > 0, hasOut = totalOut(code) > 0;
+    var msg = '确定删除商品「' + p.name + '（' + code + '）」吗？';
+    if (hasIn || hasOut) msg += '\n该商品有出入库记录，删除时会一并清除其所有记录。';
+    if (!confirm(msg)) return;
+    state.products = state.products.filter(function (x) { return x.code !== code; });
+    state.inRecords = state.inRecords.filter(function (r) { return r.code !== code; });
+    state.outRecords = state.outRecords.filter(function (r) { return r.code !== code; });
+    persist();
+    refreshAll();
+  }
+
+  /* ---------- 出入库 ---------- */
+  function fillSelect(sel, currentValue) {
+    var old = currentValue || sel.value;
+    var html = state.products.length
+      ? state.products.map(function (p) {
+          return '<option value="' + esc(p.code) + '">' + esc(p.name) + '（' + esc(p.code) + '）</option>';
+        }).join('')
+      : '<option value="">（暂无商品，请先新增）</option>';
+    sel.innerHTML = html;
+    if (old && findProduct(old)) sel.value = old;
+  }
+
+  function renderIn() {
+    var tbody = document.getElementById('in-list');
+    if (!state.inRecords.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="muted">暂无入库记录</td></tr>';
+      return;
+    }
+    var recs = state.inRecords.slice().reverse();
+    tbody.innerHTML = recs.map(function (r) {
+      var p = findProduct(r.code);
+      return '<tr>' +
+        '<td>' + esc(r.time) + '</td>' +
+        '<td>' + esc(r.code) + '</td>' +
+        '<td>' + esc(p ? p.name : '（已删除）') + '</td>' +
+        '<td class="num"><span class="tag">+' + fmtNum(r.qty) + '</span></td>' +
+        '<td>' + esc(r.note || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderOut() {
+    var tbody = document.getElementById('out-list');
+    if (!state.outRecords.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="muted">暂无出库记录</td></tr>';
+      return;
+    }
+    var recs = state.outRecords.slice().reverse();
+    tbody.innerHTML = recs.map(function (r) {
+      var p = findProduct(r.code);
+      return '<tr>' +
+        '<td>' + esc(r.time) + '</td>' +
+        '<td>' + esc(r.code) + '</td>' +
+        '<td>' + esc(p ? p.name : '（已删除）') + '</td>' +
+        '<td class="num"><span class="tag out">-' + fmtNum(r.qty) + '</span></td>' +
+        '<td>' + esc(r.note || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function nowStr() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+      ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    if (/[",\n\r]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+  function csvRow(arr) { return arr.map(csvCell).join(','); }
+
+  function buildCSV() {
+    var lines = [];
+    lines.push('商品档案');
+    lines.push(csvRow(['商品编码', '名称', '规格', '单位']));
+    state.products.forEach(function (p) { lines.push(csvRow([p.code, p.name, p.spec, p.unit])); });
+    lines.push('');
+    lines.push('库存汇总');
+    lines.push(csvRow(['商品编码', '名称', '规格', '单位', '总入库', '总出库', '当前库存']));
+    state.products.forEach(function (p) { lines.push(csvRow([p.code, p.name, p.spec, p.unit, totalIn(p.code), totalOut(p.code), stock(p.code)])); });
+    lines.push('');
+    lines.push('入库明细');
+    lines.push(csvRow(['时间', '商品编码', '名称', '数量', '备注']));
+    state.inRecords.forEach(function (r) { var p = findProduct(r.code); lines.push(csvRow([r.time, r.code, p ? p.name : '（已删除）', r.qty, r.note])); });
+    lines.push('');
+    lines.push('出库明细');
+    lines.push(csvRow(['时间', '商品编码', '名称', '数量', '备注']));
+    state.outRecords.forEach(function (r) { var p = findProduct(r.code); lines.push(csvRow([r.time, r.code, p ? p.name : '（已删除）', r.qty, r.note])); });
+    return lines.join('\r\n');
+  }
+
+  function fileStamp() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '' + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+  }
+
+  function downloadCSV() {
+    var csv = '﻿' + buildCSV();
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '库存台账_' + fileStamp() + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function doIn() {
+    var code = document.getElementById('in-product').value;
+    var qtyStr = document.getElementById('in-qty').value.trim();
+    var note = document.getElementById('in-note').value.trim();
+    if (!code) { showModal('请先选择商品（如无商品请先到「商品档案」新增）。', 'error'); return; }
+    var qty = parseFloat(qtyStr);
+    if (!qtyStr || isNaN(qty) || !isFinite(qty) || qty <= 0) { showModal('请输入大于 0 的入库数量。', 'error'); return; }
+    state.inRecords.push({ code: code, qty: qty, note: note, time: nowStr() });
+    persist();
+    document.getElementById('in-qty').value = '';
+    document.getElementById('in-note').value = '';
+    refreshAll();
+  }
+
+  function doOut() {
+    var code = document.getElementById('out-product').value;
+    var qtyStr = document.getElementById('out-qty').value.trim();
+    var note = document.getElementById('out-note').value.trim();
+    if (!code) { showModal('请先选择商品（如无商品请先到「商品档案」新增）。', 'error'); return; }
+    var qty = parseFloat(qtyStr);
+    if (!qtyStr || isNaN(qty) || !isFinite(qty) || qty <= 0) { showModal('请输入大于 0 的出库数量。', 'error'); return; }
+
+    var current = stock(code);
+    if (qty > current) {
+      showModal('库存不足，当前库存为 ' + fmtNum(current), 'error');
+      return;
+    }
+    state.outRecords.push({ code: code, qty: qty, note: note, time: nowStr() });
+    persist();
+    document.getElementById('out-qty').value = '';
+    document.getElementById('out-note').value = '';
+    refreshAll();
+  }
+
+  /* ---------- 汇总刷新 ---------- */
+  function refreshAll() {
+    renderBoard();
+    renderProducts();
+    fillSelect(document.getElementById('in-product'));
+    fillSelect(document.getElementById('out-product'));
+    renderIn();
+    renderOut();
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  document.getElementById('btn-add-product').addEventListener('click', addProduct);
+  document.getElementById('btn-in').addEventListener('click', doIn);
+  document.getElementById('btn-out').addEventListener('click', doOut);
+
+  document.getElementById('modal-ok').addEventListener('click', hideModal);
+  document.getElementById('modal').addEventListener('click', function (e) {
+    if (e.target === this) hideModal();
+  });
+
+  document.getElementById('btn-export').addEventListener('click', downloadCSV);
+
+  document.getElementById('product-list').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-del]');
+    if (btn) deleteProduct(btn.getAttribute('data-del'));
+  });
+
+  // 回车快速提交
+  ['p-code', 'p-name', 'p-spec', 'p-unit'].forEach(function (id) {
+    document.getElementById(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') addProduct();
+    });
+  });
+  document.getElementById('in-qty').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doIn();
+  });
+  document.getElementById('out-qty').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doOut();
+  });
+
+  // 标签页切换
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var panels = document.querySelectorAll('.panel');
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      document.getElementById('panel-' + tab.getAttribute('data-tab')).classList.add('active');
+    });
+  });
+
+  refreshAll();
+})();
+</script>
+</body>
+</html>
