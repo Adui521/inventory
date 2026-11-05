@@ -3,223 +3,251 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>库存台账</title>
+<title>出租屋管理</title>
 <style>
   :root {
-    --bg: #f5f6f8;
-    --card: #ffffff;
-    --border: #e3e6ea;
-    --text: #1f2933;
-    --muted: #6b7280;
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --green: #16a34a;
-    --red: #dc2626;
-    --amber: #d97706;
+    --bg:#f5f6f8; --card:#fff; --border:#e3e6ea; --text:#1f2933; --muted:#6b7280;
+    --primary:#2563eb; --primary-dark:#1d4ed8; --green:#16a34a; --red:#dc2626; --amber:#d97706;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 24px;
-    line-height: 1.5;
-  }
-  .wrap { max-width: 1080px; margin: 0 auto; }
-  .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
-  h1 { font-size: 22px; margin-bottom: 4px; }
-  .sub { color: var(--muted); font-size: 13px; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif; background:var(--bg); color:var(--text); padding:20px; line-height:1.5; }
+  .wrap { max-width:1200px; margin:0 auto; }
+  .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; }
+  h1 { font-size:21px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13px; }
 
-  /* 库存看板 */
-  .board {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-    margin-bottom: 20px;
-  }
-  .board h2 { font-size: 15px; margin-bottom: 12px; color: var(--text); }
-  .board table { width: 100%; border-collapse: collapse; }
-  .board th, .board td {
-    text-align: left; padding: 8px 10px; font-size: 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .board th { background: #fafbfc; color: var(--muted); font-weight: 600; }
-  .board td.num, .board th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .stock-val { font-weight: 700; }
-  .stock-low { color: var(--red); }
-  .empty-hint { color: var(--muted); font-size: 13px; padding: 12px 0; }
+  .stats { display:flex; gap:12px; flex-wrap:wrap; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; min-width:130px; flex:1; }
+  .stat-label { font-size:12px; color:var(--muted); }
+  .stat-val { font-size:22px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .stat-sub { font-size:12px; color:var(--muted); }
+  .stat.overdue .stat-val { color:var(--red); }
+  .board { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-top:12px; }
 
-  /* 标签页 */
-  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
-  .tab {
-    padding: 9px 18px; border: 1px solid var(--border); background: var(--card);
-    border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; color: var(--muted);
-    user-select: none;
-  }
-  .tab.active {
-    background: var(--primary); color: #fff; border-color: var(--primary);
-    font-weight: 600;
-  }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:14px 0; }
+  .tab { padding:8px 16px; border:1px solid var(--border); background:var(--card); border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; color:var(--muted); user-select:none; }
+  .tab.active { background:var(--primary); color:#fff; border-color:var(--primary); font-weight:600; }
 
-  .panel {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 0 8px 8px 8px; padding: 20px; display: none;
-  }
-  .panel.active { display: block; }
-  .panel h3 { font-size: 16px; margin-bottom: 14px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:18px; display:none; }
+  .panel.active { display:block; }
+  .panel h3 { font-size:15px; margin-bottom:12px; }
+  .hint { color:var(--muted); font-size:12px; margin-bottom:12px; }
 
-  /* 表单 */
-  .form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
-  .field { display: flex; flex-direction: column; gap: 4px; }
-  .field label { font-size: 12px; color: var(--muted); }
-  input, select {
-    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
-    font-size: 14px; min-width: 150px; background: #fff; color: var(--text);
-  }
-  input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+  .form-row { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:14px; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:12px; color:var(--muted); }
+  input, select { padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:14px; background:#fff; color:var(--text); min-width:140px; }
+  input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px; border-color:var(--primary); }
+  input.err { border-color:var(--red); background:#fef2f2; }
+  input[type=number] { min-width:100px; }
 
-  .btn {
-    padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer;
-    font-size: 14px; font-weight: 600; color: #fff; background: var(--primary);
-  }
-  .btn:hover { background: var(--primary-dark); }
-  .btn.green { background: var(--green); }
-  .btn.green:hover { background: #15803d; }
-  .btn.red { background: var(--red); }
-  .btn.red:hover { background: #b91c1c; }
-  .btn.small { padding: 5px 12px; font-size: 13px; }
-  .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn { padding:8px 18px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#fff; background:var(--primary); }
+  .btn:hover { background:var(--primary-dark); }
+  .btn.green { background:var(--green); } .btn.green:hover { background:#15803d; }
+  .btn.red { background:var(--red); } .btn.red:hover { background:#b91c1c; }
+  .btn.small { padding:5px 11px; font-size:12px; }
+  .btn:disabled { background:#9ca3af; cursor:not-allowed; }
 
-  /* 表格 */
-  table.data { width: 100%; border-collapse: collapse; }
-  table.data th, table.data td {
-    text-align: left; padding: 9px 10px; font-size: 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  table.data th { background: #fafbfc; color: var(--muted); font-weight: 600; }
-  table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  table.data tbody tr:hover { background: #f8fafc; }
-  .muted { color: var(--muted); }
-  .tag { display:inline-block; padding:2px 8px; border-radius: 10px; font-size:12px; background:#eef2ff; color:var(--primary); }
-  .tag.out { background:#fee2e2; color:var(--red); }
+  .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-scroll table { min-width:680px; }
+  table.data { width:100%; border-collapse:collapse; }
+  table.data th, table.data td { text-align:left; padding:8px 9px; font-size:13px; border-bottom:1px solid var(--border); }
+  table.data th { background:#fafbfc; color:var(--muted); font-weight:600; white-space:nowrap; }
+  table.data td.num, table.data th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.data tbody tr:hover { background:#f8fafc; }
+  table.data td input { padding:5px 6px; font-size:13px; min-width:70px; width:82px; }
+  .muted { color:var(--muted); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; background:#eef2ff; color:var(--primary); }
+  .tag.green { background:#dcfce7; color:var(--green); }
+  .tag.red { background:#fee2e2; color:var(--red); }
+  .tag.amber { background:#fef3c7; color:var(--amber); }
 
-  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table-scroll table { min-width: 620px; }
-  .board .table-scroll table { min-width: 720px; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(17,24,39,.5); display:flex; align-items:center; justify-content:center; z-index:100; }
+  .modal { background:#fff; border-radius:12px; width:520px; max-width:92vw; box-shadow:0 20px 50px rgba(0,0,0,.28); overflow:hidden; }
+  .modal-header { padding:14px 18px; color:#fff; font-weight:700; font-size:15px; }
+  .modal-header.error { background:var(--red); }
+  .modal-header.info { background:var(--primary); }
+  .modal-body { padding:20px 18px; font-size:14px; line-height:1.6; white-space:pre-line; max-height:70vh; overflow:auto; }
+  .modal-actions { padding:0 18px 18px; text-align:right; }
 
-  /* 提示弹窗 */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(17,24,39,.5);
-    display: flex; align-items: center; justify-content: center; z-index: 100;
-  }
-  .modal {
-    background: #fff; border-radius: 12px; width: 380px; max-width: 90vw;
-    box-shadow: 0 20px 50px rgba(0,0,0,.28); overflow: hidden;
-  }
-  .modal-header { padding: 14px 18px; color: #fff; font-weight: 700; font-size: 15px; }
-  .modal-header.error { background: var(--red); }
-  .modal-header.info { background: var(--primary); }
-  .modal-body { padding: 20px 18px; font-size: 15px; line-height: 1.6; white-space: pre-line; }
-  .modal-actions { padding: 0 18px 18px; text-align: right; }
-
-  /* 手机适配 */
-  @media (max-width: 640px) {
-    body { padding: 12px; }
-    h1 { font-size: 19px; }
-    .topbar { gap: 10px; }
-    .tabs { flex-wrap: wrap; }
-    .tab { flex: 1 1 auto; text-align: center; padding: 9px 8px; font-size: 13px; }
-    .panel { padding: 14px; }
-    .board { padding: 12px; }
-    .form-row { gap: 10px; }
-    .form-row .field { flex: 1 1 100% !important; min-width: 0 !important; }
-    .form-row .field input, .form-row .field select { width: 100% !important; min-width: 0 !important; }
-    .form-row .btn { width: 100%; }
+  @media (max-width:640px){
+    body { padding:10px; }
+    .stat { min-width:44%; }
+    .tab { padding:8px 10px; font-size:13px; }
+    .panel { padding:12px; }
+    .form-row .field { flex:1 1 100% !important; min-width:0 !important; }
+    .form-row .field input, .form-row .field select { width:100% !important; min-width:0 !important; }
+    .form-row .btn { width:100%; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div>
-      <h1>📦 库存台账</h1>
-      <div class="sub">单机版 · 数据保存在浏览器本地（localStorage）</div>
-    </div>
-    <button class="btn" id="btn-export">导出 CSV</button>
+    <div><h1>🏠 出租资产管理</h1><div class="sub">单机版 · localStorage · 住宅/厂房/店铺/土地</div></div>
   </div>
 
-  <!-- 库存看板 -->
+  <!-- 顶部看板 -->
+  <div class="stats">
+    <div class="stat"><div class="stat-label">本期应收</div><div class="stat-val" id="s-receivable">¥0.00</div></div>
+    <div class="stat"><div class="stat-label">本期已收</div><div class="stat-val" id="s-received">¥0.00</div></div>
+    <div class="stat overdue"><div class="stat-label">逾期未收</div><div class="stat-val" id="s-overdue">¥0.00</div><div class="stat-sub" id="s-overdue-sub"></div></div>
+    <div class="stat"><div class="stat-label">本月未抄表（住宅）</div><div class="stat-val" id="s-unread">0</div></div>
+  </div>
   <div class="board">
-    <h2>库存看板（当前库存 = 总入库 − 总出库）</h2>
-    <div id="board"></div>
+    <div class="sub" style="margin-bottom:8px;">按资产类型汇总</div>
+    <div class="table-scroll"><table class="data" style="min-width:560px;">
+      <thead><tr><th>资产类型</th><th class="num">本期应收</th><th class="num">本期已收</th><th class="num">逾期未收</th><th class="num">未抄表</th></tr></thead>
+      <tbody id="type-board"></tbody>
+    </table></div>
   </div>
 
-  <!-- 标签页 -->
   <div class="tabs">
-    <div class="tab active" data-tab="product">商品档案</div>
-    <div class="tab" data-tab="in">入库登记</div>
-    <div class="tab" data-tab="out">出库登记</div>
+    <div class="tab active" data-tab="asset">资产单元</div>
+    <div class="tab" data-tab="tenant">租客</div>
+    <div class="tab" data-tab="lease">租约</div>
+    <div class="tab" data-tab="reading">本月抄表</div>
+    <div class="tab" data-tab="bill">账单</div>
+    <div class="tab" data-tab="setting">设置</div>
   </div>
 
-  <!-- 商品档案 -->
-  <div class="panel active" id="panel-product">
-    <h3>新增商品</h3>
+  <!-- 资产单元 -->
+  <div class="panel active" id="panel-asset">
+    <h3>资产档案</h3>
     <div class="form-row">
-      <div class="field"><label>商品编码 *（唯一）</label><input id="p-code" placeholder="如 SP001"></div>
-      <div class="field"><label>名称 *</label><input id="p-name" placeholder="商品名称"></div>
-      <div class="field"><label>规格</label><input id="p-spec" placeholder="如 500ml / 箱"></div>
-      <div class="field"><label>单位 *</label><input id="p-unit" placeholder="如 件 / 个 / 箱" style="min-width:110px;"></div>
-      <button class="btn" id="btn-add-product">新增商品</button>
+      <div class="field"><label>资产编号 *</label><input id="a-no" placeholder="如 101 / C1 / P1 / T1"></div>
+      <div class="field"><label>资产类型 *</label><select id="a-type"><option>住宅</option><option>厂房</option><option>店铺</option><option>土地</option></select></div>
+      <div class="field"><label>名称/位置</label><input id="a-name" placeholder="选填"></div>
+      <div class="field" data-t="住宅"><label>楼层</label><input id="a-floor" type="number" min="1" placeholder="1"></div>
+      <div class="field" data-t="住宅"><label>户型</label><select id="a-roomtype"><option>单间</option><option>一房一厅</option></select></div>
+      <div class="field" data-t="住宅"><label>水表号</label><input id="a-wmeter" placeholder="选填"></div>
+      <div class="field" data-t="住宅"><label>电表号</label><input id="a-emeter" placeholder="选填"></div>
+      <div class="field" data-t="住宅"><label>水初始读数</label><input id="a-winit" type="number" step="any" value="0"></div>
+      <div class="field" data-t="住宅"><label>电初始读数</label><input id="a-einit" type="number" step="any" value="0"></div>
+      <div class="field" data-t="面积"><label id="a-area-label">面积(㎡)</label><input id="a-area" type="number" step="any" placeholder="面积"></div>
+      <div class="field"><label>备注</label><input id="a-remark" placeholder="选填"></div>
+      <input type="hidden" id="a-id">
+      <button class="btn" id="btn-asset-save">新增资产</button>
+      <button class="btn red" id="btn-asset-reset" type="button">清空</button>
     </div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 16px;">
-    <h3>商品列表</h3>
+    <div class="form-row">
+      <div class="field"><label>资产类型筛选</label><select id="a-filter"><option value="">全部</option><option>住宅</option><option>厂房</option><option>店铺</option><option>土地</option></select></div>
+    </div>
     <div class="table-scroll">
       <table class="data">
-        <thead><tr><th>商品编码</th><th>名称</th><th>规格</th><th>单位</th><th class="num">操作</th></tr></thead>
-        <tbody id="product-list"></tbody>
+        <thead><tr><th>资产编号</th><th>类型</th><th>名称</th><th>楼层</th><th>户型</th><th class="num">面积</th><th class="num">水初始</th><th class="num">电初始</th><th>状态</th><th class="num">操作</th></tr></thead>
+        <tbody id="asset-list"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- 入库登记 -->
-  <div class="panel" id="panel-in">
-    <h3>入库登记</h3>
+  <!-- 租客 -->
+  <div class="panel" id="panel-tenant">
+    <h3>新增租客</h3>
     <div class="form-row">
-      <div class="field"><label>选择商品 *</label><select id="in-product" style="min-width:220px;"></select></div>
-      <div class="field"><label>入库数量 *</label><input id="in-qty" type="number" min="0" step="any" placeholder="数量"></div>
-      <div class="field" style="flex:1;min-width:200px;"><label>备注</label><input id="in-note" placeholder="可选" style="width:100%;"></div>
-      <button class="btn green" id="btn-in">确认入库</button>
+      <div class="field"><label>姓名 *</label><input id="t-name" placeholder="姓名"></div>
+      <div class="field"><label>电话 *</label><input id="t-phone" placeholder="手机号"></div>
+      <div class="field"><label>身份证号</label><input id="t-idcard" placeholder="选填"></div>
+      <div class="field" style="flex:1;min-width:180px;"><label>备注</label><input id="t-remark" style="width:100%;" placeholder="选填"></div>
+      <button class="btn" id="btn-tenant-add">新增租客</button>
     </div>
-    <h3 style="margin-top:8px;">入库记录</h3>
     <div class="table-scroll">
       <table class="data">
-        <thead><tr><th>时间</th><th>商品编码</th><th>名称</th><th class="num">数量</th><th>备注</th></tr></thead>
-        <tbody id="in-list"></tbody>
+        <thead><tr><th>姓名</th><th>电话</th><th>身份证号</th><th>备注</th><th class="num">操作</th></tr></thead>
+        <tbody id="tenant-list"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- 出库登记 -->
-  <div class="panel" id="panel-out">
-    <h3>出库登记</h3>
+  <!-- 租约 -->
+  <div class="panel" id="panel-lease">
+    <h3>新增租约</h3>
     <div class="form-row">
-      <div class="field"><label>选择商品 *</label><select id="out-product" style="min-width:220px;"></select></div>
-      <div class="field"><label>出库数量 *</label><input id="out-qty" type="number" min="0" step="any" placeholder="数量"></div>
-      <div class="field" style="flex:1;min-width:200px;"><label>备注</label><input id="out-note" placeholder="可选" style="width:100%;"></div>
-      <button class="btn red" id="btn-out">确认出库</button>
+      <div class="field"><label>资产 *（仅空置）</label><select id="l-asset"></select></div>
+      <div class="field"><label>租客 *</label><select id="l-tenant"></select></div>
+      <div class="field"><label>起租日 *</label><input id="l-start" type="date"></div>
+      <div class="field"><label>缴费周期 *</label><select id="l-cycle"><option>月付</option><option>季付</option><option>年付</option></select></div>
+      <div class="field"><label>计租方式</label><input id="l-mode" disabled></div>
+      <div class="field"><label id="l-price-label">单价(元/间/月) *</label><input id="l-price" type="number" step="any" placeholder="单价"></div>
+      <div class="field"><label>押金</label><input id="l-deposit" type="number" step="any" placeholder="选填"></div>
+      <div class="field"><label>交租日</label><input id="l-payday" type="number" min="1" max="31" placeholder="1"></div>
     </div>
-    <h3 style="margin-top:8px;">出库记录</h3>
+    <div class="form-row">
+      <div class="field" data-fee="sanitation"><label>卫生费(元/月)</label><input id="f-sanitation" type="number" step="any" placeholder="0"></div>
+      <div class="field" data-fee="crop_comp"><label>青苗补偿(元，一次性)</label><input id="f-crop" type="number" step="any" placeholder="0"></div>
+      <div class="field" data-fee="shared_utility"><label>公摊水电默认(元/期)</label><input id="f-shared" type="number" step="any" placeholder="0"></div>
+      <button class="btn green" id="btn-lease-add">新增租约</button>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>资产类型筛选</label><select id="l-filter"><option value="">全部</option><option>住宅</option><option>厂房</option><option>店铺</option><option>土地</option></select></div>
+    </div>
     <div class="table-scroll">
       <table class="data">
-        <thead><tr><th>时间</th><th>商品编码</th><th>名称</th><th class="num">数量</th><th>备注</th></tr></thead>
-        <tbody id="out-list"></tbody>
+        <thead><tr><th>资产</th><th>类型</th><th>租客</th><th>起租日</th><th>缴费周期</th><th>计价</th><th class="num">押金</th><th>状态</th><th class="num">操作</th></tr></thead>
+        <tbody id="lease-list"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- 本月抄表 -->
+  <div class="panel" id="panel-reading">
+    <h3>本月抄表（仅住宅）</h3>
+    <div class="hint" id="reading-hint"></div>
+    <div class="form-row">
+      <button class="btn green" id="btn-save-reading">保存本月抄表</button>
+    </div>
+    <div class="table-scroll">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>房号</th><th>租客</th>
+            <th>水表上期</th><th>水表本期</th><th class="num">水用量</th><th class="num">水费</th>
+            <th>电表上期</th><th>电表本期</th><th class="num">电用量</th><th class="num">电费</th>
+          </tr>
+        </thead>
+        <tbody id="reading-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 账单 -->
+  <div class="panel" id="panel-bill">
+    <h3>账单</h3>
+    <div class="form-row">
+      <button class="btn green" id="btn-gen-bills">生成本期账单</button>
+      <div class="field"><label>资产类型筛选</label><select id="b-filter"><option value="">全部</option><option>住宅</option><option>厂房</option><option>店铺</option><option>土地</option></select></div>
+      <div class="field"><label>账期</label><select id="b-period"><option value="">全部</option></select></div>
+    </div>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>账期</th><th>类型</th><th>资产</th><th>租客</th><th class="num">合计</th><th class="num">已收</th><th>状态</th><th class="num">操作</th></tr></thead>
+        <tbody id="bill-list"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:16px;">登记收款</h3>
+    <div class="form-row">
+      <div class="field"><label>账单 *</label><select id="p-bill" style="min-width:240px;"></select></div>
+      <div class="field"><label>收款金额 *</label><input id="p-amount" type="number" step="any" placeholder="金额"></div>
+      <div class="field"><label>方式</label><select id="p-method"><option>现金</option><option>微信</option><option>支付宝</option><option>转账</option></select></div>
+      <div class="field"><label>日期</label><input id="p-date" type="date"></div>
+      <div class="field" style="flex:1;min-width:160px;"><label>备注（少收必填）</label><input id="p-note" style="width:100%;" placeholder="结清可不填"></div>
+      <button class="btn green" id="btn-pay">确认收款</button>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="panel" id="panel-setting">
+    <h3>系统设置</h3>
+    <div class="form-row">
+      <div class="field"><label>水单价（元/吨）*</label><input id="s-water" type="number" step="any"></div>
+      <div class="field"><label>电单价（元/度）*</label><input id="s-elec" type="number" step="any"></div>
+      <div class="field"><label>物业费单价（元/㎡/月）*</label><input id="s-property" type="number" step="any"></div>
+      <button class="btn" id="btn-setting-save">保存设置</button>
     </div>
   </div>
 </div>
 
-<!-- 提示弹窗 -->
 <div class="modal-overlay" id="modal" style="display:none;">
   <div class="modal">
     <div class="modal-header" id="modal-header"></div>
@@ -230,345 +258,646 @@
 
 <script>
 (function () {
-  var K = { products: 'inv_products', in: 'inv_in', out: 'inv_out' };
+  var K = { s:'ra_settings', a:'ra_assets', t:'ra_tenants', l:'ra_leases', f:'ra_lease_fee', m:'ra_readings', b:'ra_bills', i:'ra_bill_items', p:'ra_payments' };
 
-  // 安全存储：部分手机浏览器对本地文件禁用 localStorage 时，回退到内存，避免直接报错
   var storage = (function () {
-    try {
-      var t = '__inv_test__';
-      window.localStorage.setItem(t, '1');
-      window.localStorage.removeItem(t);
-      return window.localStorage;
-    } catch (e) {
-      var mem = {};
-      return {
-        getItem: function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
-        setItem: function (k, v) { mem[k] = String(v); },
-        removeItem: function (k) { delete mem[k]; }
-      };
-    }
+    try { var x='__t__'; window.localStorage.setItem(x,'1'); window.localStorage.removeItem(x); return window.localStorage; }
+    catch(e){ var mem={}; return { getItem:function(k){return Object.prototype.hasOwnProperty.call(mem,k)?mem[k]:null;}, setItem:function(k,v){mem[k]=String(v);}, removeItem:function(k){delete mem[k];} }; }
   })();
+  function load(k,f){ try{ return JSON.parse(storage.getItem(k)) || f; }catch(e){ return f; } }
+  function save(k,v){ storage.setItem(k, JSON.stringify(v)); }
+  function uid(p){ return (p||'id')+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function money(n){ return '¥' + Number(n||0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function num(n){ return Number(n||0).toLocaleString('zh-CN'); }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function round2(n){ return Math.round((n||0)*100)/100; }
+  function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function curMonth(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1); }
 
-  function load(key, fallback) {
-    try { return JSON.parse(storage.getItem(key)) || fallback; }
-    catch (e) { return fallback; }
-  }
-  function save(key, val) { storage.setItem(key, JSON.stringify(val)); }
-
-  var state = {
-    products: load(K.products, []),
-    inRecords: load(K.in, []),
-    outRecords: load(K.out, [])
+  // 费用模板（固定配置）
+  var FEE_TEMPLATES = {
+    '住宅': [ {code:'rent',name:'租金',method:'rent'}, {code:'water',name:'水费',method:'meter'}, {code:'electric',name:'电费',method:'meter'} ],
+    '厂房': [ {code:'rent',name:'租金',method:'rent'}, {code:'property',name:'物业费',method:'area'}, {code:'shared_utility',name:'公摊水电',method:'manual'} ],
+    '店铺': [ {code:'rent',name:'租金',method:'rent'}, {code:'property',name:'物业费',method:'area'}, {code:'sanitation',name:'卫生费',method:'fixed'} ],
+    '土地': [ {code:'rent',name:'租金',method:'rent'}, {code:'crop_comp',name:'青苗补偿',method:'fixed_once'} ]
   };
+  var RENT_MODE = { '住宅':'按间', '厂房':'按面积', '店铺':'按面积', '土地':'按亩' };
+  var RENT_BASE = { '按间':'按月', '按面积':'按月', '按亩':'按年' };
+  var ASSET_TYPES = ['住宅','厂房','店铺','土地'];
 
-  function persist() {
-    save(K.products, state.products);
-    save(K.in, state.inRecords);
-    save(K.out, state.outRecords);
+  // ---------- 初始数据 ----------
+  function seedAssets(){
+    var arr=[];
+    for(var f=1;f<=4;f++){
+      arr.push({ id:uid('a'), asset_no:f+'01', asset_type:'住宅', name:'', floor:f, room_type:'一房一厅', area:null, area_unit:null, water_meter_no:'', electric_meter_no:'', water_init:0, electric_init:0, remark:'' });
+      for(var i=2;i<=5;i++){
+        arr.push({ id:uid('a'), asset_no:f+'0'+i, asset_type:'住宅', name:'', floor:f, room_type:'单间', area:null, area_unit:null, water_meter_no:'', electric_meter_no:'', water_init:0, electric_init:0, remark:'' });
+      }
+    }
+    return arr;
   }
 
-  function findProduct(code) {
-    return state.products.find(function (p) { return p.code === code; });
+  var settings = load(K.s, { water_price:5, electric_price:1.2, property_price:1 });
+  var assets = load(K.a, null); if(!assets || !assets.length) assets = seedAssets();
+  var tenants = load(K.t, []);
+  var leases = load(K.l, []);
+  var leaseFees = load(K.f, []);
+  var readings = load(K.m, []);
+  var bills = load(K.b, []);
+  var billItems = load(K.i, []);
+  var payments = load(K.p, []);
+
+  function persist(){ save(K.s,settings); save(K.a,assets); save(K.t,tenants); save(K.l,leases); save(K.f,leaseFees); save(K.m,readings); save(K.b,bills); save(K.i,billItems); save(K.p,payments); }
+
+  // ---------- 查询 ----------
+  function assetById(id){ return assets.find(function(a){return a.id===id;}); }
+  function tenantById(id){ return tenants.find(function(t){return t.id===id;}); }
+  function leaseById(id){ return leases.find(function(l){return l.id===id;}); }
+  function activeLease(assetId){ return leases.find(function(l){return l.asset_id===assetId && l.status==='有效';}); }
+  function readingFor(assetId,type,period){ return readings.find(function(r){return r.asset_id===assetId && r.meter_type===type && r.period===period;}); }
+  function latestReading(assetId,type,beforePeriod){
+    return readings.filter(function(r){return r.asset_id===assetId && r.meter_type===type && r.period<beforePeriod;})
+      .sort(function(a,b){ return b.period.localeCompare(a.period) || b.id.localeCompare(a.id); })[0];
+  }
+  function prevFor(assetId,type,period){
+    var r=latestReading(assetId,type,period);
+    if(r) return r.cur_reading;
+    var a=assetById(assetId);
+    return type==='水' ? (a.water_init||0) : (a.electric_init||0);
+  }
+  function paidAmount(billId){ return payments.filter(function(x){return x.bill_id===billId;}).reduce(function(s,x){return s+x.amount;},0); }
+  function billStatus(b){ return paidAmount(b.id) >= b.total_amount ? '已结清' : '未结清'; }
+  function itemsOf(billId){ return billItems.filter(function(x){return x.bill_id===billId;}); }
+  function leaseFeeAmount(leaseId, code){
+    var f=leaseFees.find(function(x){return x.lease_id===leaseId && x.fee_code===code;});
+    return f ? f.amount : 0;
+  }
+  function setLeaseFee(leaseId, code, amount){
+    leaseFees=leaseFees.filter(function(x){return !(x.lease_id===leaseId && x.fee_code===code);});
+    leaseFees.push({ lease_id:leaseId, fee_code:code, amount:amount });
   }
 
-  function totalIn(code) {
-    return state.inRecords.reduce(function (s, r) { return r.code === code ? s + r.qty : s; }, 0);
+  // ---------- 账期与计价 ----------
+  function periodMonths(cycle){ return cycle==='月付'?1 : cycle==='季付'?3 : 12; }
+  function periodInfo(cycle, date){
+    var d=date||new Date(); var y=d.getFullYear(), m=d.getMonth()+1;
+    if(cycle==='月付'){ var e=new Date(y,m,0).getDate(); return {key:y+'-'+pad(m), start:y+'-'+pad(m)+'-01', end:y+'-'+pad(m)+'-'+pad(e)}; }
+    if(cycle==='季付'){ var q=Math.floor((m-1)/3)+1; var sm=(q-1)*3+1; var em=new Date(y,sm+2,0).getDate(); return {key:y+'-Q'+q, start:y+'-'+pad(sm)+'-01', end:y+'-'+pad(sm+2)+'-'+pad(em)}; }
+    return {key:String(y), start:y+'-01-01', end:y+'-12-31'};
   }
-  function totalOut(code) {
-    return state.outRecords.reduce(function (s, r) { return r.code === code ? s + r.qty : s; }, 0);
+  function periodFactor(cycle, base){
+    var months=periodMonths(cycle);
+    return base==='按年' ? months/12 : months;
   }
-  function stock(code) { return totalIn(code) - totalOut(code); }
+  function rentQuantity(asset, mode){ return mode==='按间' ? 1 : (asset.area||0); }
+  function rentUnitLabel(mode){ return mode==='按间'?'间': mode==='按面积'?'㎡':'亩'; }
+  function rentPriceLabel(l){ return l.rent_unit_price+'元/'+rentUnitLabel(l.rent_mode)+'/'+(l.rent_price_base==='按年'?'年':'月'); }
+  function usageInPeriod(assetId, type, start, end){
+    var s=start.slice(0,7), e=end.slice(0,7);
+    return readings.filter(function(r){return r.asset_id===assetId && r.meter_type===type && r.period>=s && r.period<=e;})
+      .reduce(function(sum,r){return sum+r.usage;},0);
+  }
 
-  function fmtNum(n) {
-    // 去掉多余的小数点后零，保留必要小数
-    return Number(n.toFixed(6)).toLocaleString('zh-CN');
-  }
-
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  function showModal(msg, type) {
-    var isError = type === 'error';
-    document.getElementById('modal-header').className = 'modal-header ' + (isError ? 'error' : 'info');
-    document.getElementById('modal-header').textContent = isError ? '⚠️ 提示' : 'ℹ️ 提示';
+  // ---------- 弹窗 ----------
+  function showMsg(msg,type){
+    var err = type==='error';
+    document.getElementById('modal-header').className = 'modal-header '+(err?'error':'info');
+    document.getElementById('modal-header').textContent = err ? '⚠️ 提示' : 'ℹ️ 提示';
     document.getElementById('modal-body').textContent = msg;
-    document.getElementById('modal-ok').className = 'btn' + (isError ? ' red' : '');
-    document.getElementById('modal').style.display = 'flex';
+    document.getElementById('modal-ok').className = 'btn'+(err?' red':'');
+    document.getElementById('modal').style.display='flex';
   }
-  function hideModal() {
-    document.getElementById('modal').style.display = 'none';
+  function showDetail(title, html){
+    document.getElementById('modal-header').className='modal-header info';
+    document.getElementById('modal-header').textContent=title;
+    document.getElementById('modal-body').innerHTML=html;
+    document.getElementById('modal-ok').className='btn';
+    document.getElementById('modal').style.display='flex';
   }
+  function hideModal(){ document.getElementById('modal').style.display='none'; }
 
-  /* ---------- 库存看板 ---------- */
-  function renderBoard() {
-    var el = document.getElementById('board');
-    if (!state.products.length) {
-      el.innerHTML = '<div class="empty-hint">暂无商品，请先在「商品档案」中新增商品。</div>';
-      return;
-    }
-    var rows = state.products.map(function (p) {
-      var s = stock(p.code);
-      return '<tr>' +
-        '<td>' + esc(p.code) + '</td>' +
-        '<td>' + esc(p.name) + '</td>' +
-        '<td>' + esc(p.spec || '—') + '</td>' +
-        '<td>' + esc(p.unit) + '</td>' +
-        '<td class="num">' + fmtNum(totalIn(p.code)) + '</td>' +
-        '<td class="num">' + fmtNum(totalOut(p.code)) + '</td>' +
-        '<td class="num stock-val' + (s < 0 ? ' stock-low' : '') + '">' + fmtNum(s) + '</td>' +
-        '</tr>';
-    }).join('');
-    el.innerHTML =
-      '<div class="table-scroll"><table><thead><tr>' +
-      '<th>商品编码</th><th>名称</th><th>规格</th><th>单位</th>' +
-      '<th class="num">总入库</th><th class="num">总出库</th><th class="num">当前库存</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  // ---------- 看板 ----------
+  function currentPeriodBills(){
+    var out=[];
+    leases.filter(function(l){return l.status==='有效';}).forEach(function(l){
+      var pi=periodInfo(l.pay_cycle);
+      var b=bills.find(function(x){return x.lease_id===l.id && x.period_key===pi.key;});
+      if(b) out.push(b);
+    });
+    return out;
   }
+  function renderDashboard(){
+    var cpb=currentPeriodBills();
+    var receivable=cpb.reduce(function(s,b){return s+b.total_amount;},0);
+    var received=cpb.reduce(function(s,b){return s+paidAmount(b.id);},0);
+    var overdue=bills.filter(function(b){return b.period_end < todayStr() && paidAmount(b.id) < b.total_amount;});
+    var overdueAmt=overdue.reduce(function(s,b){return s+(b.total_amount-paidAmount(b.id));},0);
+    document.getElementById('s-receivable').textContent=money(receivable);
+    document.getElementById('s-received').textContent=money(received);
+    document.getElementById('s-overdue').textContent=money(overdueAmt);
+    document.getElementById('s-overdue-sub').textContent=overdue.length+' 笔';
 
-  /* ---------- 商品档案 ---------- */
-  function renderProducts() {
-    var tbody = document.getElementById('product-list');
-    if (!state.products.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="muted">暂无商品</td></tr>';
-      return;
-    }
-    tbody.innerHTML = state.products.map(function (p) {
-      return '<tr>' +
-        '<td>' + esc(p.code) + '</td>' +
-        '<td>' + esc(p.name) + '</td>' +
-        '<td>' + esc(p.spec || '—') + '</td>' +
-        '<td>' + esc(p.unit) + '</td>' +
-        '<td class="num"><button class="btn red small" data-del="' + esc(p.code) + '">删除</button></td>' +
-        '</tr>';
-    }).join('');
-  }
+    var cm=curMonth();
+    var unread=0;
+    leases.filter(function(l){return l.status==='有效';}).forEach(function(l){
+      var a=assetById(l.asset_id);
+      if(a && a.asset_type==='住宅' && (!readingFor(a.id,'水',cm) || !readingFor(a.id,'电',cm))) unread++;
+    });
+    document.getElementById('s-unread').textContent=unread;
 
-  function addProduct() {
-    var code = document.getElementById('p-code').value.trim();
-    var name = document.getElementById('p-name').value.trim();
-    var spec = document.getElementById('p-spec').value.trim();
-    var unit = document.getElementById('p-unit').value.trim();
-    if (!code) { showModal('请填写商品编码', 'error'); return; }
-    if (!name) { showModal('请填写商品名称', 'error'); return; }
-    if (!unit) { showModal('请填写单位', 'error'); return; }
-    if (findProduct(code)) { showModal('商品编码已存在：' + code + '，编码不可重复。', 'error'); return; }
-    state.products.push({ code: code, name: name, spec: spec, unit: unit });
-    persist();
-    document.getElementById('p-code').value = '';
-    document.getElementById('p-name').value = '';
-    document.getElementById('p-spec').value = '';
-    document.getElementById('p-unit').value = '';
-    refreshAll();
-  }
-
-  function deleteProduct(code) {
-    var p = findProduct(code);
-    var hasIn = totalIn(code) > 0, hasOut = totalOut(code) > 0;
-    var msg = '确定删除商品「' + p.name + '（' + code + '）」吗？';
-    if (hasIn || hasOut) msg += '\n该商品有出入库记录，删除时会一并清除其所有记录。';
-    if (!confirm(msg)) return;
-    state.products = state.products.filter(function (x) { return x.code !== code; });
-    state.inRecords = state.inRecords.filter(function (r) { return r.code !== code; });
-    state.outRecords = state.outRecords.filter(function (r) { return r.code !== code; });
-    persist();
-    refreshAll();
-  }
-
-  /* ---------- 出入库 ---------- */
-  function fillSelect(sel, currentValue) {
-    var old = currentValue || sel.value;
-    var html = state.products.length
-      ? state.products.map(function (p) {
-          return '<option value="' + esc(p.code) + '">' + esc(p.name) + '（' + esc(p.code) + '）</option>';
-        }).join('')
-      : '<option value="">（暂无商品，请先新增）</option>';
-    sel.innerHTML = html;
-    if (old && findProduct(old)) sel.value = old;
-  }
-
-  function renderIn() {
-    var tbody = document.getElementById('in-list');
-    if (!state.inRecords.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="muted">暂无入库记录</td></tr>';
-      return;
-    }
-    var recs = state.inRecords.slice().reverse();
-    tbody.innerHTML = recs.map(function (r) {
-      var p = findProduct(r.code);
-      return '<tr>' +
-        '<td>' + esc(r.time) + '</td>' +
-        '<td>' + esc(r.code) + '</td>' +
-        '<td>' + esc(p ? p.name : '（已删除）') + '</td>' +
-        '<td class="num"><span class="tag">+' + fmtNum(r.qty) + '</span></td>' +
-        '<td>' + esc(r.note || '—') + '</td>' +
-        '</tr>';
+    // 按类型汇总
+    var tbody=document.getElementById('type-board');
+    tbody.innerHTML=ASSET_TYPES.map(function(type){
+      var tb=cpb.filter(function(b){return b.asset_type===type;});
+      var rec=tb.reduce(function(s,b){return s+b.total_amount;},0);
+      var got=tb.reduce(function(s,b){return s+paidAmount(b.id);},0);
+      var od=overdue.filter(function(b){return b.asset_type===type;});
+      var odAmt=od.reduce(function(s,b){return s+(b.total_amount-paidAmount(b.id));},0);
+      var un = type==='住宅' ? unread : '—';
+      return '<tr><td>'+type+'</td><td class="num">'+money(rec)+'</td><td class="num">'+money(got)+'</td><td class="num">'+money(odAmt)+'</td><td class="num">'+un+'</td></tr>';
     }).join('');
   }
 
-  function renderOut() {
-    var tbody = document.getElementById('out-list');
-    if (!state.outRecords.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="muted">暂无出库记录</td></tr>';
-      return;
-    }
-    var recs = state.outRecords.slice().reverse();
-    tbody.innerHTML = recs.map(function (r) {
-      var p = findProduct(r.code);
-      return '<tr>' +
-        '<td>' + esc(r.time) + '</td>' +
-        '<td>' + esc(r.code) + '</td>' +
-        '<td>' + esc(p ? p.name : '（已删除）') + '</td>' +
-        '<td class="num"><span class="tag out">-' + fmtNum(r.qty) + '</span></td>' +
-        '<td>' + esc(r.note || '—') + '</td>' +
-        '</tr>';
+  // ---------- 资产 ----------
+  function updateAssetForm(){
+    var t=document.getElementById('a-type').value;
+    document.querySelectorAll('[data-t]').forEach(function(el){
+      var need=el.getAttribute('data-t');
+      el.style.display = (need==='面积' ? (t!=='住宅') : (t===need)) ? '' : 'none';
+    });
+    document.getElementById('a-area-label').textContent = t==='土地' ? '面积(亩)' : '面积(㎡)';
+  }
+  function resetAssetForm(){
+    document.getElementById('a-id').value='';
+    document.getElementById('a-no').value=''; document.getElementById('a-name').value=''; document.getElementById('a-remark').value='';
+    document.getElementById('a-floor').value=''; document.getElementById('a-roomtype').value='单间';
+    document.getElementById('a-wmeter').value=''; document.getElementById('a-emeter').value='';
+    document.getElementById('a-winit').value=0; document.getElementById('a-einit').value=0; document.getElementById('a-area').value='';
+    document.getElementById('btn-asset-save').textContent='新增资产';
+    updateAssetForm();
+  }
+  function renderAssets(){
+    var filter=document.getElementById('a-filter').value;
+    var list=assets.filter(function(a){return !filter || a.asset_type===filter;});
+    var tbody=document.getElementById('asset-list');
+    if(!list.length){ tbody.innerHTML='<tr><td colspan="10" class="muted">暂无资产</td></tr>'; return; }
+    tbody.innerHTML=list.map(function(a){
+      var st=activeLease(a.id)?'<span class="tag green">已出租</span>':'<span class="tag">空置</span>';
+      var areaTxt = a.asset_type==='土地' ? (a.area!=null?num(a.area)+' 亩':'—') : (a.area!=null?num(a.area)+' ㎡':'—');
+      return '<tr><td>'+esc(a.asset_no)+'</td><td>'+esc(a.asset_type)+'</td><td>'+esc(a.name||'—')+'</td>'
+        +'<td>'+(a.asset_type==='住宅'?(a.floor||'—'):'—')+'</td>'
+        +'<td>'+(a.asset_type==='住宅'?(a.room_type||'—'):'—')+'</td>'
+        +'<td class="num">'+areaTxt+'</td>'
+        +'<td class="num">'+(a.asset_type==='住宅'?num(a.water_init):'—')+'</td>'
+        +'<td class="num">'+(a.asset_type==='住宅'?num(a.electric_init):'—')+'</td>'
+        +'<td>'+st+'</td>'
+        +'<td class="num"><button class="btn small" data-edit="'+a.id+'">编辑</button> <button class="btn red small" data-del="'+a.id+'">删除</button></td></tr>';
     }).join('');
   }
+  function saveAsset(){
+    var id=document.getElementById('a-id').value;
+    var no=document.getElementById('a-no').value.trim();
+    var type=document.getElementById('a-type').value;
+    var name=document.getElementById('a-name').value.trim();
+    var remark=document.getElementById('a-remark').value.trim();
+    if(!no){ showMsg('请填写资产编号','error'); return; }
+    var dup=assets.find(function(a){return a.asset_no===no && a.id!==id;});
+    if(dup){ showMsg('资产编号已存在：'+no,'error'); return; }
 
-  function nowStr() {
-    var d = new Date();
-    function p(n) { return (n < 10 ? '0' : '') + n; }
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
-      ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
-  }
-
-  function csvCell(v) {
-    var s = String(v == null ? '' : v);
-    if (/[",\n\r]/.test(s)) {
-      return '"' + s.replace(/"/g, '""') + '"';
+    var obj={ asset_no:no, asset_type:type, name:name, remark:remark };
+    if(type==='住宅'){
+      obj.floor=parseInt(document.getElementById('a-floor').value)||null;
+      obj.room_type=document.getElementById('a-roomtype').value;
+      obj.water_meter_no=document.getElementById('a-wmeter').value.trim();
+      obj.electric_meter_no=document.getElementById('a-emeter').value.trim();
+      obj.water_init=parseFloat(document.getElementById('a-winit').value)||0;
+      obj.electric_init=parseFloat(document.getElementById('a-einit').value)||0;
+      obj.area=null; obj.area_unit=null;
+    } else {
+      obj.area=parseFloat(document.getElementById('a-area').value)||0;
+      obj.area_unit = type==='土地' ? '亩' : '㎡';
     }
-    return s;
-  }
-  function csvRow(arr) { return arr.map(csvCell).join(','); }
 
-  function buildCSV() {
-    var lines = [];
-    lines.push('商品档案');
-    lines.push(csvRow(['商品编码', '名称', '规格', '单位']));
-    state.products.forEach(function (p) { lines.push(csvRow([p.code, p.name, p.spec, p.unit])); });
-    lines.push('');
-    lines.push('库存汇总');
-    lines.push(csvRow(['商品编码', '名称', '规格', '单位', '总入库', '总出库', '当前库存']));
-    state.products.forEach(function (p) { lines.push(csvRow([p.code, p.name, p.spec, p.unit, totalIn(p.code), totalOut(p.code), stock(p.code)])); });
-    lines.push('');
-    lines.push('入库明细');
-    lines.push(csvRow(['时间', '商品编码', '名称', '数量', '备注']));
-    state.inRecords.forEach(function (r) { var p = findProduct(r.code); lines.push(csvRow([r.time, r.code, p ? p.name : '（已删除）', r.qty, r.note])); });
-    lines.push('');
-    lines.push('出库明细');
-    lines.push(csvRow(['时间', '商品编码', '名称', '数量', '备注']));
-    state.outRecords.forEach(function (r) { var p = findProduct(r.code); lines.push(csvRow([r.time, r.code, p ? p.name : '（已删除）', r.qty, r.note])); });
-    return lines.join('\r\n');
-  }
-
-  function fileStamp() {
-    var d = new Date();
-    function p(n) { return (n < 10 ? '0' : '') + n; }
-    return d.getFullYear() + '' + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
-  }
-
-  function downloadCSV() {
-    var csv = '﻿' + buildCSV();
-    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = '库存台账_' + fileStamp() + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
-  function doIn() {
-    var code = document.getElementById('in-product').value;
-    var qtyStr = document.getElementById('in-qty').value.trim();
-    var note = document.getElementById('in-note').value.trim();
-    if (!code) { showModal('请先选择商品（如无商品请先到「商品档案」新增）。', 'error'); return; }
-    var qty = parseFloat(qtyStr);
-    if (!qtyStr || isNaN(qty) || !isFinite(qty) || qty <= 0) { showModal('请输入大于 0 的入库数量。', 'error'); return; }
-    state.inRecords.push({ code: code, qty: qty, note: note, time: nowStr() });
-    persist();
-    document.getElementById('in-qty').value = '';
-    document.getElementById('in-note').value = '';
-    refreshAll();
-  }
-
-  function doOut() {
-    var code = document.getElementById('out-product').value;
-    var qtyStr = document.getElementById('out-qty').value.trim();
-    var note = document.getElementById('out-note').value.trim();
-    if (!code) { showModal('请先选择商品（如无商品请先到「商品档案」新增）。', 'error'); return; }
-    var qty = parseFloat(qtyStr);
-    if (!qtyStr || isNaN(qty) || !isFinite(qty) || qty <= 0) { showModal('请输入大于 0 的出库数量。', 'error'); return; }
-
-    var current = stock(code);
-    if (qty > current) {
-      showModal('库存不足，当前库存为 ' + fmtNum(current), 'error');
-      return;
+    if(id){
+      var a=assetById(id); Object.assign(a,obj);
+    } else {
+      obj.id=uid('a'); assets.push(obj);
     }
-    state.outRecords.push({ code: code, qty: qty, note: note, time: nowStr() });
-    persist();
-    document.getElementById('out-qty').value = '';
-    document.getElementById('out-note').value = '';
-    refreshAll();
+    persist(); renderAssets(); renderLeases(); renderReading(); renderDashboard(); updateReadingTab();
+    resetAssetForm();
+  }
+  function deleteAsset(id){
+    var a=assetById(id);
+    if(activeLease(id)){ showMsg('该资产存在有效租约，不能删除','error'); return; }
+    if(!confirm('确定删除资产「'+a.asset_no+'」？')) return;
+    assets=assets.filter(function(x){return x.id!==id;});
+    persist(); renderAssets(); renderLeases(); renderDashboard(); updateReadingTab();
   }
 
-  /* ---------- 汇总刷新 ---------- */
-  function refreshAll() {
-    renderBoard();
-    renderProducts();
-    fillSelect(document.getElementById('in-product'));
-    fillSelect(document.getElementById('out-product'));
-    renderIn();
-    renderOut();
+  // ---------- 租客 ----------
+  function renderTenants(){
+    var tbody=document.getElementById('tenant-list');
+    if(!tenants.length){ tbody.innerHTML='<tr><td colspan="5" class="muted">暂无租客</td></tr>'; return; }
+    tbody.innerHTML=tenants.map(function(t){
+      return '<tr><td>'+esc(t.name)+'</td><td>'+esc(t.phone)+'</td><td>'+esc(t.id_card||'—')+'</td><td>'+esc(t.remark||'—')+'</td>'
+        +'<td class="num"><button class="btn red small" data-del="'+t.id+'">删除</button></td></tr>';
+    }).join('');
+  }
+  function addTenant(){
+    var name=document.getElementById('t-name').value.trim();
+    var phone=document.getElementById('t-phone').value.trim();
+    var idc=document.getElementById('t-idcard').value.trim();
+    var remark=document.getElementById('t-remark').value.trim();
+    if(!name){ showMsg('请填写姓名','error'); return; }
+    if(!phone){ showMsg('请填写电话','error'); return; }
+    tenants.push({ id:uid('t'), name:name, phone:phone, id_card:idc, remark:remark });
+    persist(); renderTenants(); renderLeases();
+    document.getElementById('t-name').value=''; document.getElementById('t-phone').value='';
+    document.getElementById('t-idcard').value=''; document.getElementById('t-remark').value='';
+  }
+  function deleteTenant(id){
+    if(leases.some(function(l){return l.tenant_id===id;})){ showMsg('该租客存在租约记录，不能删除','error'); return; }
+    if(!confirm('确定删除该租客？')) return;
+    tenants=tenants.filter(function(t){return t.id!==id;});
+    persist(); renderTenants(); renderLeases();
   }
 
-  /* ---------- 事件绑定 ---------- */
-  document.getElementById('btn-add-product').addEventListener('click', addProduct);
-  document.getElementById('btn-in').addEventListener('click', doIn);
-  document.getElementById('btn-out').addEventListener('click', doOut);
+  // ---------- 租约 ----------
+  function updateLeaseForm(){
+    var sel=document.getElementById('l-asset');
+    var a=assetById(sel.value);
+    var mode = a ? RENT_MODE[a.asset_type] : '';
+    document.getElementById('l-mode').value = mode || '';
+    document.getElementById('l-price-label').textContent = mode==='按面积' ? '单价(元/㎡/月) *' : mode==='按亩' ? '单价(元/亩/年) *' : '单价(元/间/月) *';
+    document.querySelectorAll('[data-fee]').forEach(function(el){
+      var code=el.getAttribute('data-fee');
+      var show = a && FEE_TEMPLATES[a.asset_type].some(function(t){return t.code===code && (t.method==='fixed'||t.method==='fixed_once'||t.method==='manual');});
+      el.style.display = show ? '' : 'none';
+    });
+  }
+  function renderLeases(){
+    var filter=document.getElementById('l-filter').value;
+    var list=leases.filter(function(l){
+      if(filter){ var a=assetById(l.asset_id); return a && a.asset_type===filter; }
+      return true;
+    });
+    var tbody=document.getElementById('lease-list');
+    if(!list.length){ tbody.innerHTML='<tr><td colspan="9" class="muted">暂无租约</td></tr>'; }
+    else {
+      tbody.innerHTML=list.slice().reverse().map(function(l){
+        var a=assetById(l.asset_id), t=tenantById(l.tenant_id);
+        var st=l.status==='有效'?'<span class="tag green">有效</span>':'<span class="tag">已退租</span>';
+        var op=l.status==='有效'?'<button class="btn red small" data-end="'+l.id+'">退租</button>':'—';
+        return '<tr><td>'+esc(a?a.asset_no:'（已删）')+'</td><td>'+esc(a?a.asset_type:'—')+'</td><td>'+esc(t?t.name:'（已删）')+'</td>'
+          +'<td>'+esc(l.start_date)+'</td><td>'+esc(l.pay_cycle)+'</td><td>'+esc(rentPriceLabel(l))+'</td>'
+          +'<td class="num">'+money(l.deposit)+'</td><td>'+st+'</td><td class="num">'+op+'</td></tr>';
+      }).join('');
+    }
+    // 资产下拉（仅空置）
+    var asel=document.getElementById('l-asset');
+    var curA=asel.value;
+    var free=assets.filter(function(a){return !activeLease(a.id);});
+    asel.innerHTML=free.length?free.map(function(a){return '<option value="'+a.id+'">'+esc(a.asset_no)+'（'+esc(a.asset_type)+'）</option>';}).join('')
+      :'<option value="">（无空置资产）</option>';
+    if(curA && free.some(function(a){return a.id===curA;})) asel.value=curA;
+    // 租客下拉
+    var tsel=document.getElementById('l-tenant');
+    var curT=tsel.value;
+    tsel.innerHTML=tenants.length?tenants.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'（'+esc(t.phone)+'）</option>';}).join('')
+      :'<option value="">（请先新增租客）</option>';
+    if(curT && tenantById(curT)) tsel.value=curT;
+    updateLeaseForm();
+  }
+  function addLease(){
+    var assetId=document.getElementById('l-asset').value;
+    var tenantId=document.getElementById('l-tenant').value;
+    var start=document.getElementById('l-start').value;
+    var cycle=document.getElementById('l-cycle').value;
+    var price=parseFloat(document.getElementById('l-price').value);
+    var deposit=parseFloat(document.getElementById('l-deposit').value)||0;
+    var payday=parseInt(document.getElementById('l-payday').value)||1;
+    if(!assetId){ showMsg('请选择资产（无空置资产则需先退租）','error'); return; }
+    if(!tenantId){ showMsg('请选择租客','error'); return; }
+    if(!start){ showMsg('请填起租日','error'); return; }
+    if(isNaN(price)||price<=0){ showMsg('请填写大于 0 的单价','error'); return; }
+    if(activeLease(assetId)){ showMsg('该资产已存在有效租约','error'); return; }
 
+    var a=assetById(assetId);
+    var mode=RENT_MODE[a.asset_type];
+    var base=RENT_BASE[mode];
+    var id=uid('l');
+    leases.push({ id:id, asset_id:assetId, tenant_id:tenantId, start_date:start, end_date:'', actual_end_date:'',
+      rent_mode:mode, rent_unit_price:price, rent_price_base:base, pay_cycle:cycle, pay_day:payday, deposit:deposit, status:'有效', remark:'' });
+    // 费用参数
+    FEE_TEMPLATES[a.asset_type].forEach(function(t){
+      if(t.method==='fixed') setLeaseFee(id, t.code, parseFloat(document.getElementById('f-'+t.code).value)||0);
+      if(t.method==='fixed_once') setLeaseFee(id, t.code, parseFloat(document.getElementById('f-crop').value)||0);
+      if(t.method==='manual') setLeaseFee(id, t.code, parseFloat(document.getElementById('f-shared').value)||0);
+    });
+    persist(); renderLeases(); renderAssets(); renderReading(); renderDashboard();
+    document.getElementById('l-price').value=''; document.getElementById('l-deposit').value='';
+    document.getElementById('f-sanitation').value=''; document.getElementById('f-crop').value=''; document.getElementById('f-shared').value='';
+  }
+  function endLease(id){
+    var l=leaseById(id);
+    if(!confirm('确定给该租约办理退租？')) return;
+    l.status='已退租'; l.actual_end_date=todayStr(); l.end_date=l.end_date||todayStr();
+    persist(); renderLeases(); renderAssets(); renderReading(); renderDashboard();
+  }
+
+  // ---------- 本月抄表（仅住宅） ----------
+  function renderReading(){
+    var cm=curMonth();
+    document.getElementById('reading-hint').textContent='账期：'+cm+'　水单价 '+settings.water_price+' 元/吨 · 电单价 '+settings.electric_price+' 元/度（上期自动带出，可改）';
+    var tbody=document.getElementById('reading-body');
+    var active=leases.filter(function(l){
+      var a=assetById(l.asset_id);
+      return l.status==='有效' && a && a.asset_type==='住宅';
+    });
+    if(!active.length){ tbody.innerHTML='<tr><td colspan="10" class="muted">无在租住宅（非住宅类资产无需抄表）</td></tr>'; return; }
+    tbody.innerHTML=active.map(function(l){
+      var a=assetById(l.asset_id), ten=tenantById(l.tenant_id);
+      var wp=prevFor(a.id,'水',cm), ep=prevFor(a.id,'电',cm);
+      var wr=readingFor(a.id,'水',cm), er=readingFor(a.id,'电',cm);
+      var wc=wr?wr.cur_reading:'', ec=er?er.cur_reading:'';
+      return '<tr data-asset="'+a.id+'">'
+        +'<td>'+esc(a.asset_no)+'</td><td>'+esc(ten?ten.name:'（无）')+'</td>'
+        +'<td><input data-t="w_prev" type="number" step="any" value="'+wp+'"></td>'
+        +'<td><input data-t="w_cur" type="number" step="any" value="'+wc+'" placeholder="本期"></td>'
+        +'<td class="num" data-usage="w"></td><td class="num" data-amount="w"></td>'
+        +'<td><input data-t="e_prev" type="number" step="any" value="'+ep+'"></td>'
+        +'<td><input data-t="e_cur" type="number" step="any" value="'+ec+'" placeholder="本期"></td>'
+        +'<td class="num" data-usage="e"></td><td class="num" data-amount="e"></td>'
+        +'</tr>';
+    }).join('');
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr){ calcRow(tr); });
+  }
+  function calcRow(tr){
+    var price={ w:settings.water_price, e:settings.electric_price };
+    ['w','e'].forEach(function(type){
+      var prevInp=tr.querySelector('input[data-t="'+type+'_prev"]');
+      var curInp=tr.querySelector('input[data-t="'+type+'_cur"]');
+      var prev=parseFloat(prevInp.value), cur=parseFloat(curInp.value);
+      var uc=tr.querySelector('[data-usage="'+type+'"]'), ac=tr.querySelector('[data-amount="'+type+'"]');
+      if(isNaN(prev)||isNaN(cur)||curInp.value.trim()===''){ uc.textContent=''; ac.textContent=''; curInp.classList.remove('err'); return; }
+      if(cur<prev){ uc.textContent=''; ac.textContent=''; curInp.classList.add('err'); return; }
+      curInp.classList.remove('err');
+      var usage=cur-prev; uc.textContent=num(usage); ac.textContent=money(usage*price[type]);
+    });
+  }
+  function saveReadings(){
+    var cm=curMonth();
+    var errs=[], toSave=[];
+    Array.prototype.forEach.call(document.querySelectorAll('#reading-body tr[data-asset]'), function(tr){
+      var assetId=tr.getAttribute('data-asset');
+      ['w','e'].forEach(function(type){
+        var curInp=tr.querySelector('input[data-t="'+type+'_cur"]');
+        if(curInp.value.trim()==='') return;
+        var prevInp=tr.querySelector('input[data-t="'+type+'_prev"]');
+        var prev=parseFloat(prevInp.value), cur=parseFloat(curInp.value);
+        var a=assetById(assetId), label=a.asset_no+(type==='w'?' 水表':' 电表');
+        if(isNaN(prev)){ errs.push(label+'：上期读数未填'); return; }
+        if(isNaN(cur)){ errs.push(label+'：本期读数无效'); return; }
+        if(cur<prev){ errs.push(label+'：本期读数小于上期，已拦截'); return; }
+        toSave.push({ assetId:assetId, type:type, prev:prev, cur:cur });
+      });
+    });
+    if(errs.length){ showMsg('以下问题需修正：\n'+errs.join('\n'),'error'); return; }
+    var date=todayStr();
+    toSave.forEach(function(x){
+      readings=readings.filter(function(r){return !(r.asset_id===x.assetId && r.meter_type===x.type && r.period===cm);});
+      var l=activeLease(x.assetId);
+      readings.push({ id:uid('m'), asset_id:x.assetId, lease_id:l?l.id:null, meter_type:x.type, period:cm, reading_date:date, prev_reading:x.prev, cur_reading:x.cur, usage:x.cur-x.prev, remark:'' });
+    });
+    persist(); renderReading(); renderDashboard();
+    showMsg('本月抄表已保存（'+toSave.length+' 条）','info');
+  }
+
+  // ---------- 账单 ----------
+  function allPeriods(){
+    var set={}, arr=[];
+    bills.forEach(function(b){ if(!set[b.period_key]){ set[b.period_key]=1; arr.push(b.period_key); } });
+    arr.sort().reverse(); return arr;
+  }
+  function renderBills(){
+    var filter=document.getElementById('b-filter').value;
+    var per=document.getElementById('b-period').value;
+    var periods=allPeriods();
+    var psel=document.getElementById('b-period');
+    psel.innerHTML='<option value="">全部</option>'+periods.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
+    psel.value = per && periods.indexOf(per)>=0 ? per : '';
+
+    var list=bills.filter(function(b){
+      if(filter && b.asset_type!==filter) return false;
+      if(per && b.period_key!==per) return false;
+      return true;
+    }).sort(function(a,b){ return b.period_key.localeCompare(a.period_key) || (b.asset_no||'').localeCompare(a.asset_no||''); });
+
+    var tbody=document.getElementById('bill-list');
+    if(!list.length){ tbody.innerHTML='<tr><td colspan="8" class="muted">暂无账单（请先点「生成本期账单」）</td></tr>'; }
+    else {
+      tbody.innerHTML=list.map(function(b){
+        var paid=paidAmount(b.id), st=billStatus(b);
+        var tag=st==='已结清'?'<span class="tag green">已结清</span>':'<span class="tag red">未结清</span>';
+        return '<tr><td>'+esc(b.period_key)+'</td><td>'+esc(b.asset_type)+'</td><td>'+esc(b.asset_no)+'</td><td>'+esc(b.tenant_name)+'</td>'
+          +'<td class="num">'+money(b.total_amount)+'</td><td class="num">'+money(paid)+'</td><td>'+tag+'</td>'
+          +'<td class="num"><button class="btn small" data-detail="'+b.id+'">明细</button> <button class="btn small" data-pay="'+b.id+'">收款</button></td></tr>';
+      }).join('');
+    }
+
+    var psel2=document.getElementById('p-bill');
+    var pcur=psel2.value;
+    psel2.innerHTML=bills.slice().sort(function(a,b){return b.period_key.localeCompare(a.period_key);}).map(function(b){
+      var remaining=b.total_amount-paidAmount(b.id);
+      return '<option value="'+b.id+'">'+esc(b.asset_no+' · '+b.tenant_name+' · '+b.period_key+'（未收 '+money(remaining)+'）')+'</option>';
+    }).join('') || '<option value="">（暂无账单）</option>';
+    if(pcur && bills.some(function(b){return b.id===pcur;})) psel2.value=pcur;
+    document.getElementById('p-date').value=todayStr();
+  }
+  function buildBillItems(lease, period){
+    var a=assetById(lease.asset_id);
+    var tmpl=FEE_TEMPLATES[a.asset_type]||[];
+    var isFirst = !bills.some(function(b){return b.lease_id===lease.id;});
+    var items=[];
+    tmpl.forEach(function(t){
+      var qty, price, amount, unit, remark='';
+      if(t.method==='rent'){
+        qty=rentQuantity(a, lease.rent_mode);
+        price=lease.rent_unit_price;
+        amount=price*qty*periodFactor(lease.pay_cycle, lease.rent_price_base);
+        unit=rentUnitLabel(lease.rent_mode);
+      } else if(t.method==='meter'){
+        var usage=usageInPeriod(a.id, t.code, period.start, period.end);
+        price = t.code==='water' ? settings.water_price : settings.electric_price;
+        amount=usage*price; qty=usage; unit=t.code==='water'?'吨':'度';
+      } else if(t.method==='area'){
+        price=settings.property_price;
+        qty=a.area||0; amount=qty*price*periodMonths(lease.pay_cycle); unit='㎡';
+      } else if(t.method==='fixed'){
+        price=leaseFeeAmount(lease.id, t.code);
+        qty=periodMonths(lease.pay_cycle); amount=price*qty; unit='月';
+      } else if(t.method==='fixed_once'){
+        if(!isFirst){ return; }
+        price=leaseFeeAmount(lease.id, t.code);
+        qty=1; amount=price; unit='一次性';
+      } else if(t.method==='manual'){
+        price=leaseFeeAmount(lease.id, t.code);
+        qty=1; amount=price; unit='期';
+      }
+      items.push({ bill_id:'', code:t.code, name:t.name, method:t.method, quantity:round2(qty), unit:unit, unit_price:round2(price), amount:round2(amount), remark:remark });
+    });
+    return items;
+  }
+  function generateBills(){
+    var active=leases.filter(function(l){return l.status==='有效';});
+    if(!active.length){ showMsg('没有有效租约','error'); return; }
+    var created=0, skipped=0;
+    active.forEach(function(l){
+      var pi=periodInfo(l.pay_cycle);
+      if(bills.some(function(b){return b.lease_id===l.id && b.period_key===pi.key;})){ skipped++; return; }
+      var a=assetById(l.asset_id), ten=tenantById(l.tenant_id);
+      var bid=uid('b');
+      var items=buildBillItems(l, pi);
+      var total=items.reduce(function(s,x){return s+x.amount;},0);
+      bills.push({ id:bid, lease_id:l.id, asset_id:l.asset_id, tenant_id:l.tenant_id,
+        asset_type:a.asset_type, asset_no:a.asset_no, tenant_name:ten?ten.name:'（已删）',
+        period_key:pi.key, period_start:pi.start, period_end:pi.end, pay_cycle:l.pay_cycle,
+        total_amount:round2(total), remark:'', created_at:todayStr() });
+      items.forEach(function(x){ x.bill_id=bid; x.id=uid('i'); billItems.push(x); });
+      created++;
+    });
+    persist(); renderBills(); renderDashboard();
+    if(created===0){ showMsg('本期账单已存在，禁止重复生成（跳过 '+skipped+' 张已存在）','error'); }
+    else { showMsg('本期账单已生成 '+created+' 张'+(skipped?'，跳过 '+skipped+' 张（已存在）':''),'info'); }
+  }
+  function showBillDetail(id){
+    var b=bills.find(function(x){return x.id===id;});
+    if(!b) return;
+    var rows=itemsOf(id).map(function(x){
+      return '<tr><td>'+esc(x.name)+'</td><td class="num">'+num(x.quantity)+'</td><td>'+esc(x.unit||'')+'</td><td class="num">'+money(x.unit_price)+'</td><td class="num">'+money(x.amount)+'</td></tr>';
+    }).join('');
+    var html='<div class="sub" style="margin-bottom:8px;">'+esc(b.asset_no+' · '+b.tenant_name+' · '+b.period_key+' · '+b.pay_cycle)+'</div>'
+      +'<table class="data"><thead><tr><th>费用项</th><th class="num">数量</th><th>单位</th><th class="num">单价</th><th class="num">金额</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'<div style="margin-top:10px;text-align:right;font-weight:700;">合计 '+money(b.total_amount)+' · 已收 '+money(paidAmount(b.id))+' · '+billStatus(b)+'</div>';
+    showDetail('账单明细', html);
+  }
+  function registerPayment(){
+    var billId=document.getElementById('p-bill').value;
+    var amount=parseFloat(document.getElementById('p-amount').value);
+    var method=document.getElementById('p-method').value;
+    var date=document.getElementById('p-date').value||todayStr();
+    var note=document.getElementById('p-note').value.trim();
+    if(!billId){ showMsg('请选择账单','error'); return; }
+    var b=bills.find(function(x){return x.id===billId;});
+    var paid=paidAmount(b.id), remaining=b.total_amount-paid;
+    if(isNaN(amount)||amount<=0){ showMsg('请输入大于 0 的收款金额','error'); return; }
+    if(remaining<=0){ showMsg('该账单已结清','error'); return; }
+    if(amount>remaining){ showMsg('收款金额超过未收金额（未收 '+money(remaining)+'）','error'); return; }
+    if(amount<remaining && !note){ showMsg('少收必须填写备注','error'); return; }
+    payments.push({ id:uid('p'), bill_id:billId, type:'账单收款', amount:amount, pay_date:date, method:method, remark:note });
+    persist(); renderBills(); renderDashboard();
+    document.getElementById('p-amount').value=''; document.getElementById('p-note').value='';
+    showMsg('收款成功'+(amount>=remaining?'，账单已结清':''),'info');
+  }
+
+  // ---------- 设置 ----------
+  function renderSettings(){
+    document.getElementById('s-water').value=settings.water_price;
+    document.getElementById('s-elec').value=settings.electric_price;
+    document.getElementById('s-property').value=settings.property_price;
+  }
+  function saveSettings(){
+    var w=parseFloat(document.getElementById('s-water').value);
+    var e=parseFloat(document.getElementById('s-elec').value);
+    var pr=parseFloat(document.getElementById('s-property').value);
+    if(isNaN(w)||w<0||isNaN(e)||e<0||isNaN(pr)||pr<0){ showMsg('单价需为不小于 0 的数字','error'); return; }
+    settings.water_price=w; settings.electric_price=e; settings.property_price=pr;
+    persist(); renderReading(); renderSettings(); renderDashboard();
+    showMsg('设置已保存','info');
+  }
+
+  // ---------- 抄表标签可见性 ----------
+  function updateReadingTab(){
+    var hasRes=assets.some(function(a){return a.asset_type==='住宅';});
+    var tab=document.querySelector('.tab[data-tab="reading"]');
+    if(tab) tab.style.display=hasRes?'':'none';
+    if(!hasRes && document.querySelector('.tab.active')===tab){ switchTab('asset'); }
+  }
+
+  // ---------- 汇总刷新 ----------
+  function renderAll(){
+    renderDashboard(); renderAssets(); renderTenants(); renderLeases(); renderReading(); renderBills(); renderSettings(); updateReadingTab();
+  }
+
+  // ---------- 事件绑定 ----------
+  function switchTab(name){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    var tab=document.querySelector('.tab[data-tab="'+name+'"]');
+    if(tab) tab.classList.add('active');
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    var panel=document.getElementById('panel-'+name);
+    if(panel) panel.classList.add('active');
+  }
+  document.querySelectorAll('.tab').forEach(function(tab){
+    tab.addEventListener('click', function(){ switchTab(tab.getAttribute('data-tab')); });
+  });
+
+  document.getElementById('a-type').addEventListener('change', updateAssetForm);
+  document.getElementById('btn-asset-save').addEventListener('click', saveAsset);
+  document.getElementById('btn-asset-reset').addEventListener('click', resetAssetForm);
+  document.getElementById('a-filter').addEventListener('change', renderAssets);
+  document.getElementById('btn-tenant-add').addEventListener('click', addTenant);
+  document.getElementById('l-asset').addEventListener('change', updateLeaseForm);
+  document.getElementById('btn-lease-add').addEventListener('click', addLease);
+  document.getElementById('l-filter').addEventListener('change', renderLeases);
+  document.getElementById('btn-save-reading').addEventListener('click', saveReadings);
+  document.getElementById('btn-gen-bills').addEventListener('click', generateBills);
+  document.getElementById('b-filter').addEventListener('change', renderBills);
+  document.getElementById('b-period').addEventListener('change', renderBills);
+  document.getElementById('btn-pay').addEventListener('click', registerPayment);
+  document.getElementById('btn-setting-save').addEventListener('click', saveSettings);
   document.getElementById('modal-ok').addEventListener('click', hideModal);
-  document.getElementById('modal').addEventListener('click', function (e) {
-    if (e.target === this) hideModal();
+  document.getElementById('modal').addEventListener('click', function(e){ if(e.target===this) hideModal(); });
+
+  document.getElementById('asset-list').addEventListener('click', function(e){
+    var eb=e.target.closest('[data-edit]'); if(eb){
+      var a=assetById(eb.getAttribute('data-edit'));
+      document.getElementById('a-id').value=a.id;
+      document.getElementById('a-no').value=a.asset_no;
+      document.getElementById('a-type').value=a.asset_type;
+      document.getElementById('a-name').value=a.name||'';
+      document.getElementById('a-remark').value=a.remark||'';
+      document.getElementById('a-floor').value=a.floor||'';
+      document.getElementById('a-roomtype').value=a.room_type||'单间';
+      document.getElementById('a-wmeter').value=a.water_meter_no||'';
+      document.getElementById('a-emeter').value=a.electric_meter_no||'';
+      document.getElementById('a-winit').value=a.water_init||0;
+      document.getElementById('a-einit').value=a.electric_init||0;
+      document.getElementById('a-area').value=a.area||'';
+      document.getElementById('btn-asset-save').textContent='保存修改';
+      updateAssetForm();
+      return;
+    }
+    var db=e.target.closest('[data-del]'); if(db) deleteAsset(db.getAttribute('data-del'));
+  });
+  document.getElementById('tenant-list').addEventListener('click', function(e){
+    var b=e.target.closest('[data-del]'); if(b) deleteTenant(b.getAttribute('data-del'));
+  });
+  document.getElementById('lease-list').addEventListener('click', function(e){
+    var b=e.target.closest('[data-end]'); if(b) endLease(b.getAttribute('data-end'));
+  });
+  document.getElementById('reading-body').addEventListener('input', function(e){
+    if(e.target && e.target.getAttribute('data-t')) calcRow(e.target.closest('tr'));
+  });
+  document.getElementById('bill-list').addEventListener('click', function(e){
+    var d=e.target.closest('[data-detail]'); if(d){ showBillDetail(d.getAttribute('data-detail')); return; }
+    var p=e.target.closest('[data-pay]'); if(p){ document.getElementById('p-bill').value=p.getAttribute('data-pay'); document.getElementById('p-amount').focus(); }
   });
 
-  document.getElementById('btn-export').addEventListener('click', downloadCSV);
-
-  document.getElementById('product-list').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-del]');
-    if (btn) deleteProduct(btn.getAttribute('data-del'));
-  });
-
-  // 回车快速提交
-  ['p-code', 'p-name', 'p-spec', 'p-unit'].forEach(function (id) {
-    document.getElementById(id).addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') addProduct();
-    });
-  });
-  document.getElementById('in-qty').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') doIn();
-  });
-  document.getElementById('out-qty').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') doOut();
-  });
-
-  // 标签页切换
-  var tabs = document.querySelectorAll('.tab');
-  tabs.forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      tabs.forEach(function (t) { t.classList.remove('active'); });
-      tab.classList.add('active');
-      var panels = document.querySelectorAll('.panel');
-      panels.forEach(function (p) { p.classList.remove('active'); });
-      document.getElementById('panel-' + tab.getAttribute('data-tab')).classList.add('active');
-    });
-  });
-
-  refreshAll();
+  document.getElementById('l-start').value=todayStr();
+  resetAssetForm();
+  renderAll();
 })();
 </script>
 </body>
